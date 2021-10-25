@@ -23,4 +23,5 @@ type UserStore interface {
 	Get(id uint64) (*UserInfo, error)
 	GetSize() (size uint64, err error)
 	List(id uint64, limit int) (list []*UserInfo, err error)
+	SetPassword(name, password string) error
 }

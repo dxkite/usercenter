@@ -107,3 +107,11 @@ func (p *PasswordHash) Verify(password string) bool {
 	}
 	return false
 }
+
+func VerifyPassword(hash, password string) bool {
+	h := &PasswordHash{}
+	if err := h.Unmarshal([]byte(hash)); err != nil {
+		return false
+	}
+	return h.Verify(password)
+}

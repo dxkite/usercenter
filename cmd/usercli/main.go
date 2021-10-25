@@ -11,10 +11,12 @@ import (
 )
 
 const (
-	OpAdd       = "add"
-	OpAddHash   = "add_hash"
-	OpList      = "list"
-	OpSetBaseId = "set_base_id"
+	OpAdd         = "add"
+	OpAddHash     = "add_hash"
+	OpList        = "list"
+	OpSetBaseId   = "set_base_id"
+	OpSetPassword = "set_password"
+	OpTest        = "test"
 )
 
 func addUser(u store.UserStore, username, password string) error {
@@ -50,6 +52,34 @@ func addUserHashSalt(u store.UserStore, username, md5Hash, salt string) error {
 		return err
 	}
 	fmt.Println("create user", username, "id", id)
+	return nil
+}
+
+func setPassword(u store.UserStore, username, password string) error {
+	if len(username) == 0 || len(password) == 0 {
+		return errors.New("name or password empty")
+	}
+	err := u.SetPassword(username, hash.NewMd5Password(password).String())
+	if err != nil {
+		return err
+	}
+	fmt.Println("change password success", username)
+	return nil
+}
+
+func testPassword(u store.UserStore, username, password string) error {
+	if len(username) == 0 || len(password) == 0 {
+		return errors.New("name or password empty")
+	}
+	id, err := u.GetId(username)
+	if err != nil {
+		return err
+	}
+	user, err := u.Get(id)
+	if err != nil {
+		return err
+	}
+	fmt.Println("verify password:", hash.VerifyPassword(user.PasswordHash, password))
 	return nil
 }
 
@@ -121,5 +151,15 @@ func main() {
 			os.Exit(1)
 		}
 		fmt.Println("set success")
+	case OpSetPassword:
+		if err := setPassword(us, *name, *password); err != nil {
+			fmt.Println("set password error", err)
+			os.Exit(1)
+		}
+	case OpTest:
+		if err := testPassword(us, *name, *password); err != nil {
+			fmt.Println("test password error", err)
+			os.Exit(1)
+		}
 	}
 }

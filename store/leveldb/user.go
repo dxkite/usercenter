@@ -14,7 +14,8 @@ type UserStore struct {
 }
 
 var (
-	ErrUserExists = errors.New("user exists")
+	ErrUserExists    = errors.New("user exists")
+	ErrUserNotExists = errors.New("user not exists")
 )
 
 func NewUserStore(p string) (s *UserStore, err error) {
@@ -77,4 +78,15 @@ func (s *UserStore) Init(baseId uint64) error {
 
 func (s *UserStore) SetBaseId(id uint64) error {
 	return s.id.SetBaseId(id)
+}
+
+func (s *UserStore) SetPassword(name, password string) error {
+	eid, err := s.name.Get(name)
+	if err != nil {
+		return err
+	}
+	if eid == 0 {
+		return ErrUserNotExists
+	}
+	return s.id.Password(eid, password)
 }
