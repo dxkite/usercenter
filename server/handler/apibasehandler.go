@@ -21,11 +21,16 @@ type ApiBaseResp struct {
 	Data    interface{} `json:"data,emitempty"`
 }
 
+type HttpContext struct {
+	writer  http.ResponseWriter
+	request *http.Request
+}
+
 const JsonMIMEHeader = "application/json; charset=utf-8"
 const JsonSystemError = `{"code":-1, "message":"系统错误，请稍后重试"}`
 const JsonContentTypeError = `{"code":-2, "message":"请求内容必须为JSON格式"}`
 
-type ApiCallback func(w http.ResponseWriter, req *http.Request, input interface{}) (interface{}, int, error)
+type ApiCallback func(ctx *HttpContext, input interface{}) (interface{}, int, error)
 
 func NewApiHandler(input interface{}, fun ApiCallback) http.Handler {
 	return &callback{input, fun}
@@ -45,14 +50,17 @@ func (fh *callback) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		JsonError(w, JsonSystemError, http.StatusInternalServerError)
 		return
 	}
-
-	v := reflect.New(reflect.TypeOf(fh.i))
+	t := reflect.TypeOf(fh.i)
+	v := reflect.New(t)
 	if err := json.Unmarshal(data, v.Interface()); err != nil {
 		log.Error(err)
 		JsonError(w, JsonSystemError, http.StatusInternalServerError)
 		return
 	}
-	d, ret, err := fh.f(w, req, v.Interface())
+	d, ret, err := fh.f(&HttpContext{
+		writer:  w,
+		request: req,
+	}, v.Elem().Interface())
 	fh.WriteData(w, ret, err, d)
 }
 

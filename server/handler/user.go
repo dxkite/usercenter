@@ -28,7 +28,7 @@ type SignResp struct {
 }
 
 var SignInHandler = func(us store.UserStore) http.Handler {
-	return NewApiHandler(SignResp{}, func(w http.ResponseWriter, req *http.Request, input interface{}) (interface{}, int, error) {
+	return NewApiHandler(&SignResp{}, func(ctx *HttpContext, input interface{}) (interface{}, int, error) {
 		r := input.(*SignResp)
 		if len(r.Name) == 0 || len(r.Password) == 0 {
 			return nil, ErrCodeEmptyUserNameOrPassword, ErrEmptyUserNameOrPassword
@@ -43,7 +43,7 @@ var SignInHandler = func(us store.UserStore) http.Handler {
 			return nil, ErrCodeUserNotExist, ErrUserNotExist
 		}
 		if hash.VerifyPassword(user.PasswordHash, r.Password) {
-			w.Header().Set("uin", strconv.Itoa(int(id)))
+			ctx.writer.Header().Set("uin", strconv.Itoa(int(id)))
 		} else {
 			return nil, ErrCodePasswordError, ErrPasswordError
 		}
