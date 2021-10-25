@@ -11,9 +11,10 @@ import (
 )
 
 const (
-	OpAdd     = "add"
-	OpAddHash = "add_hash"
-	OpList    = "list"
+	OpAdd       = "add"
+	OpAddHash   = "add_hash"
+	OpList      = "list"
+	OpSetBaseId = "set_base_id"
 )
 
 func addUser(u store.UserStore, username, password string) error {
@@ -52,17 +53,17 @@ func addUserHashSalt(u store.UserStore, username, md5Hash, salt string) error {
 	return nil
 }
 
-func printList(u store.UserStore) error {
+func printList(u store.UserStore, start, limit int) error {
 	size, err := u.GetSize()
 	if err != nil {
 		return err
 	}
 	fmt.Println("total user", size)
-	list, err := u.List(1, int(size))
+	list, err := u.List(uint64(start), limit)
 	if err != nil {
 		return err
 	}
-	fmt.Println("Id\tName\tPasswordHash\tData")
+	fmt.Println("Id\tName\tPasswordHash\tExtData")
 	for _, v := range list {
 		fmt.Println(v.Id, "\t", v.Name, "\t", v.PasswordHash, "\t", v.Data)
 	}
@@ -76,6 +77,10 @@ func main() {
 	md5Hash := flag.String("md5_hash", "", "user password 1024-md5-salt hash")
 	salt := flag.String("salt", "", "user password hash salt")
 	data := flag.String("data", "./data", "data save path")
+	start := flag.Int("start", 1, "start user id")
+	limit := flag.Int("limit", -1, "limit user size")
+	baseId := flag.Int("base_id", 0, "base user id")
+
 	flag.Parse()
 
 	if len(os.Args) == 1 {
@@ -89,7 +94,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err := us.Init(10000); err != nil {
+	if err := us.Init(0); err != nil {
 		fmt.Println("database init error", err)
 		os.Exit(1)
 	}
@@ -106,9 +111,15 @@ func main() {
 			os.Exit(1)
 		}
 	case OpList:
-		if err := printList(us); err != nil {
+		if err := printList(us, *start, *limit); err != nil {
 			fmt.Println("list user error", err)
 			os.Exit(1)
 		}
+	case OpSetBaseId:
+		if err := us.SetBaseId(uint64(*baseId)); err != nil {
+			fmt.Println("set base id error", err)
+			os.Exit(1)
+		}
+		fmt.Println("set success")
 	}
 }

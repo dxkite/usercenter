@@ -74,3 +74,7 @@ func (s *UserStore) List(start uint64, limit int) (list []*store.UserInfo, err e
 func (s *UserStore) Init(baseId uint64) error {
 	return s.id.Init(baseId)
 }
+
+func (s *UserStore) SetBaseId(id uint64) error {
+	return s.id.SetBaseId(id)
+}

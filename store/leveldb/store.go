@@ -198,6 +198,14 @@ func (s *DataStore) Init(baseId uint64) error {
 	return nil
 }
 
+func (s *DataStore) SetBaseId(baseId uint64) error {
+	size, _, dt, err := s.getBase()
+	if err == leveldb.ErrNotFound {
+		return s.saveBase(0, baseId, &BasicData{})
+	}
+	return s.saveBase(size, baseId, dt)
+}
+
 func NewDataStore(file string) (s *DataStore, err error) {
 	s = &DataStore{}
 	s.db, err = leveldb.OpenFile(file, nil)
