@@ -37,13 +37,10 @@ func NewApiHandler(input interface{}, fun ApiCallback) http.Handler {
 }
 
 func (fh *callback) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	w.Header().Set("Content-Type", JsonMIMEHeader)
-
 	if t := req.Header.Get("Content-Type"); strings.Index(t, "json") < 0 {
 		JsonError(w, JsonContentTypeError, http.StatusBadRequest)
 		return
 	}
-
 	data, err := ioutil.ReadAll(req.Body)
 	if err != nil {
 		log.Error(err)
@@ -61,10 +58,11 @@ func (fh *callback) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		writer:  w,
 		request: req,
 	}, v.Elem().Interface())
-	fh.WriteData(w, ret, err, d)
+	WriteData(w, ret, err, d)
 }
 
-func (fh *callback) WriteData(w http.ResponseWriter, ret int, err error, data interface{}) {
+func WriteData(w http.ResponseWriter, ret int, err error, data interface{}) {
+	w.Header().Set("Content-Type", JsonMIMEHeader)
 	d := &ApiBaseResp{
 		Code:    ret,
 		Message: "",
