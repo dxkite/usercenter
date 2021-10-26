@@ -58,15 +58,17 @@ func NewUserServer(us store.UserStore) http.Handler {
 	s.signFailed = map[string]int{}
 
 	// 登录
-	s.Handle("/signin", handler.SignInHandler(s, us))
+	s.Handle("/signin", handler.AllowMethod([]string{http.MethodPost},
+		handler.SignInHandler(s, us)))
 
 	// 登出
-	s.HandleFunc("/signout", func(writer http.ResponseWriter, request *http.Request) {
-		uin := request.Header.Get("uin")
-		log.Info("logout", uin)
-		writer.Header().Set("uin", uin)
-		writer.WriteHeader(http.StatusOK)
-	})
+	s.Handle("/signout", handler.AllowMethod([]string{http.MethodPost},
+		http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+			uin := request.Header.Get("uin")
+			log.Info("logout", uin)
+			writer.Header().Set("uin", uin)
+			writer.WriteHeader(http.StatusOK)
+		})))
 
 	// 获取验证码
 	s.Handle("/captcha", handler.CaptchaHandler(s, s, s.cap))

@@ -29,6 +29,7 @@ type HttpContext struct {
 const JsonMIMEHeader = "application/json; charset=utf-8"
 const JsonSystemError = `{"code":-1, "message":"系统错误，请稍后重试"}`
 const JsonContentTypeError = `{"code":-2, "message":"请求内容必须为JSON格式"}`
+const JsonMethodError = `{"code":-3, "message":"非法的请求方法"}`
 
 type ApiCallback func(ctx *HttpContext, input interface{}) (interface{}, int, error)
 
@@ -87,4 +88,19 @@ func JsonError(w http.ResponseWriter, error string, code int) {
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.WriteHeader(code)
 	_, _ = fmt.Fprintln(w, error)
+}
+
+func AllowMethod(methods []string, handler http.Handler) http.Handler {
+	method := map[string]bool{}
+	for _, m := range methods {
+		method[m] = true
+	}
+	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		_, ok := method[req.Method]
+		if !ok {
+			JsonError(w, JsonMethodError, http.StatusMethodNotAllowed)
+			return
+		}
+		handler.ServeHTTP(w, req)
+	})
 }
