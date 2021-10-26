@@ -104,3 +104,7 @@ func AllowMethod(methods []string, handler http.Handler) http.Handler {
 		handler.ServeHTTP(w, req)
 	})
 }
+
+func ClientIp(req *http.Request) string {
+	return req.Header.Get("Client-Ip")
+}

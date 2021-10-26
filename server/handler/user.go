@@ -38,7 +38,7 @@ type SignResp struct {
 var SignInHandler = func(c AntiBot, us store.UserStore) http.Handler {
 	return NewApiHandler(&SignResp{}, func(ctx *HttpContext, input interface{}) (interface{}, int, error) {
 		r := input.(*SignResp)
-		ip := ctx.request.Header.Get("Client-Ip")
+		ip := ClientIp(ctx.request)
 
 		// 检查验证码
 		if c.RequireVerifyCaptcha(ip) && c.VerifyCaptcha(ip, r.CaptchaAnswer) == false {
