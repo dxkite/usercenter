@@ -11,6 +11,7 @@ import (
 
 func main() {
 	data := flag.String("data", "./data", "data save path")
+	addr := flag.String("addr", ":2333", "listen addr")
 	flag.Parse()
 
 	us, err := leveldb.NewUserStore(*data)
@@ -24,5 +25,5 @@ func main() {
 		os.Exit(1)
 	}
 
-	_ = http.ListenAndServe(":8888", server.NewUserServer(us))
+	_ = http.ListenAndServe(*addr, server.NewUserServer(us))
 }
