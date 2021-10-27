@@ -16,9 +16,13 @@ type CaptchaResp struct {
 	Data     string `json:"data"`
 }
 
+type VerifyCaptcha struct {
+	Answer string `json:"answer"`
+}
+
 var CaptchaHandler = func(a AntiBot, s CaptchaStore, cap *base64Captcha.Captcha) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		ip := req.Header.Get("Client-Ip")
+		ip := ClientIp(req)
 		if id, err := s.GetCaptchaId(ip); err != nil {
 			JsonError(w, JsonSystemError, http.StatusInternalServerError)
 		} else {
@@ -35,5 +39,21 @@ var CaptchaHandler = func(a AntiBot, s CaptchaStore, cap *base64Captcha.Captcha)
 			Data:     base64,
 		}
 		WriteData(w, 0, nil, d)
+	})
+}
+
+var VerifyCaptchaHandler = func(c AntiBot, s CaptchaStore) http.Handler {
+	return NewApiHandler(&VerifyCaptcha{}, func(ctx *HttpContext, input interface{}) (interface{}, int, error) {
+		r := input.(*VerifyCaptcha)
+		ip := ClientIp(ctx.request)
+		// 检查验证码
+		if c.RequireVerifyCaptcha(ip) && c.VerifyCaptcha(ip, r.Answer) == false {
+			return nil, ErrCodeCaptcha, ErrCaptcha
+		}
+		// 清除一次验证校验
+		_ = c.CountSignFailed(ip, -1)
+		// 清除当前验证码
+		_ = s.SetCaptchaId(ip, "")
+		return nil, 0, nil
 	})
 }

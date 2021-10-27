@@ -5,9 +5,12 @@ import (
 	"dxkite.cn/usercenter/captcha"
 	"dxkite.cn/usercenter/server/handler"
 	"dxkite.cn/usercenter/store"
+	"fmt"
 	"github.com/mojocn/base64Captcha"
 	"net/http"
 )
+
+const MaxSignFailedTime = 3
 
 type UserServer struct {
 	*http.ServeMux
@@ -28,13 +31,14 @@ func (s *UserServer) SetCaptchaId(ip, id string) error {
 	return nil
 }
 
-func (s *UserServer) CountSignFailed(ip string) error {
-	s.signFailed[ip]++
+func (s *UserServer) CountSignFailed(ip string, val int) error {
+	s.signFailed[ip] += val
+	fmt.Println(ip, s.signFailed[ip])
 	return nil
 }
 
 func (s *UserServer) RequireVerifyCaptcha(ip string) bool {
-	return s.signFailed[ip] > 3
+	return s.signFailed[ip] > MaxSignFailedTime
 }
 
 func (s *UserServer) VerifyCaptcha(ip string, answer string) bool {
@@ -45,7 +49,7 @@ func (s *UserServer) VerifyCaptcha(ip string, answer string) bool {
 	return s.cap.Verify(id, answer, true)
 }
 
-func (s *UserServer) ClearSignFailed(ip string) error {
+func (s *UserServer) ClearRequireCaptcha(ip string) error {
 	delete(s.signFailed, ip)
 	return nil
 }
@@ -72,5 +76,6 @@ func NewUserServer(us store.UserStore) http.Handler {
 
 	// 获取验证码
 	s.Handle("/captcha", handler.CaptchaHandler(s, s, s.cap))
+	s.Handle("/verify_captcha", handler.VerifyCaptchaHandler(s, s))
 	return s
 }

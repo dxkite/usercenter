@@ -4,35 +4,21 @@ import (
 	"dxkite.cn/log"
 	"dxkite.cn/usercenter/hash"
 	"dxkite.cn/usercenter/store"
-	"errors"
 	"net/http"
 	"strconv"
-)
-
-const (
-	ErrCodeEmptyUserNameOrPassword int = 50000 + iota
-	ErrCodeUserPasswordError
-	ErrCodeCaptcha
-)
-
-var (
-	ErrEmptyUserNameOrPassword = errors.New("账号或者密码为空")
-	ErrUserPasswordError       = errors.New("账号或者密码错误")
-	ErrCaptcha                 = errors.New("验证码错误")
 )
 
 type AntiBot interface {
 	RequireVerifyCaptcha(ip string) bool
 	VerifyCaptcha(ip string, answer string) bool
-	CountSignFailed(ip string) error
-	ClearSignFailed(ip string) error
+	CountSignFailed(ip string, val int) error
+	ClearRequireCaptcha(ip string) error
 }
 
 // 登录配置
 type SignResp struct {
-	Name          string `json:"name"`
-	Password      string `json:"password"`
-	CaptchaAnswer string `json:"captcha_answer"`
+	Name     string `json:"name"`
+	Password string `json:"password"`
 }
 
 var SignInHandler = func(c AntiBot, us store.UserStore) http.Handler {
@@ -41,7 +27,7 @@ var SignInHandler = func(c AntiBot, us store.UserStore) http.Handler {
 		ip := ClientIp(ctx.request)
 
 		// 检查验证码
-		if c.RequireVerifyCaptcha(ip) && c.VerifyCaptcha(ip, r.CaptchaAnswer) == false {
+		if c.RequireVerifyCaptcha(ip) {
 			return nil, ErrCodeCaptcha, ErrCaptcha
 		}
 
@@ -62,9 +48,9 @@ var SignInHandler = func(c AntiBot, us store.UserStore) http.Handler {
 
 		if hash.VerifyPassword(user.PasswordHash, r.Password) {
 			ctx.writer.Header().Set("uin", strconv.Itoa(int(id)))
-			_ = c.ClearSignFailed(ip)
+			_ = c.ClearRequireCaptcha(ip)
 		} else {
-			_ = c.CountSignFailed(ip)
+			_ = c.CountSignFailed(ip, 1)
 			return nil, ErrCodeUserPasswordError, ErrUserPasswordError
 		}
 		return nil, 0, nil
