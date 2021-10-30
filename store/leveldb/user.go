@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"path"
-	"strconv"
 )
 
 type UserStore struct {
@@ -30,6 +29,10 @@ func NewUserStore(p string) (s *UserStore, err error) {
 }
 
 func (s *UserStore) Create(name, password string) (id uint64, err error) {
+	return s.CreateData(name, password, &store.UserData{Name: name})
+}
+
+func (s *UserStore) CreateData(name, password string, data *store.UserData) (id uint64, err error) {
 	eid, err := s.name.Get(name)
 	if err != nil {
 		return 0, err
@@ -37,7 +40,13 @@ func (s *UserStore) Create(name, password string) (id uint64, err error) {
 	if eid > 0 {
 		return eid, ErrUserExists
 	}
-	id, err = s.id.Create(password, `{"name":`+strconv.QuoteToGraphic(name)+`}`)
+	var ud []byte
+	if data, err := json.Marshal(data); err != nil {
+		return 0, err
+	} else {
+		ud = data
+	}
+	id, err = s.id.Create(password, string(ud))
 	if err != nil {
 		return
 	}

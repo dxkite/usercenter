@@ -77,5 +77,6 @@ func NewUserServer(us store.UserStore) http.Handler {
 	// 获取验证码
 	s.Handle("/captcha", handler.CaptchaHandler(s, s, s.cap))
 	s.Handle("/verify_captcha", handler.VerifyCaptchaHandler(s, s))
+	s.Handle("/info", handler.UserInfoHandler(us))
 	return s
 }

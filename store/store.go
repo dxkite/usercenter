@@ -11,6 +11,10 @@ type UserInfo struct {
 	Data         string `json:"data"`
 }
 
+type UserData struct {
+	Name string `json:"name"`
+}
+
 func (i *UserInfo) String() string {
 	d, _ := json.Marshal(i)
 	return string(d)

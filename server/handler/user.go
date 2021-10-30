@@ -4,6 +4,7 @@ import (
 	"dxkite.cn/log"
 	"dxkite.cn/usercenter/hash"
 	"dxkite.cn/usercenter/store"
+	"encoding/json"
 	"net/http"
 	"strconv"
 )
@@ -54,5 +55,28 @@ var SignInHandler = func(c AntiBot, us store.UserStore) http.Handler {
 			return nil, ErrCodeUserPasswordError, ErrUserPasswordError
 		}
 		return nil, 0, nil
+	})
+}
+
+var UserInfoHandler = func(us store.UserStore) http.Handler {
+	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		id, _ := strconv.Atoi(request.Header.Get("uin"))
+		uid := uint64(id)
+		user, err := us.Get(uid)
+		if err != nil {
+			log.Error(err)
+			JsonError(writer, ErrUserNotExist.Error(), ErrCodeUserNotExist)
+			return
+		}
+		d := &store.UserData{}
+		if err := json.Unmarshal([]byte(user.Data), d); err != nil {
+			log.Error(err)
+			JsonError(writer, "内部错误", -1)
+			return
+		}
+		resp := map[string]interface{}{}
+		resp["id"] = id
+		resp["name"] = d.Name
+		WriteData(writer, 0, nil, resp)
 	})
 }
