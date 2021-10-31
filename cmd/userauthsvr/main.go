@@ -59,18 +59,20 @@ func main() {
 		}
 
 		userSvr := server.NewUserServer(us)
-		userSvr = http.StripPrefix("/api/user", userSvr)
-		s.Route.AddDynamicRoute("/api/user/signin", gtsvr.NewHandler(&route.RouteConfig{
+		prefix := userCfg.GetPrefix()
+		userSvr = http.StripPrefix(prefix, userSvr)
+		s.Route.AddDynamicRoute(prefix+"/signin", gtsvr.NewHandler(&route.RouteConfig{
 			SignIn: true,
 		}, userSvr))
-		s.Route.AddDynamicRoute("/api/user/signout", gtsvr.NewHandler(&route.RouteConfig{
+		s.Route.AddDynamicRoute(prefix+"/signout", gtsvr.NewHandler(&route.RouteConfig{
 			SignOut: true,
 		}, userSvr))
-		s.Route.AddDynamicRoute("/api/user/captcha", gtsvr.NewHandler(&route.RouteConfig{}, userSvr))
-		s.Route.AddDynamicRoute("/api/user/verify_captcha", gtsvr.NewHandler(&route.RouteConfig{}, userSvr))
-		s.Route.AddDynamicRoute("/api/user", gtsvr.NewHandler(&route.RouteConfig{
+		s.Route.AddDynamicRoute(prefix+"/captcha", gtsvr.NewHandler(&route.RouteConfig{}, userSvr))
+		s.Route.AddDynamicRoute(prefix+"/verify_captcha", gtsvr.NewHandler(&route.RouteConfig{}, userSvr))
+		s.Route.AddDynamicRoute(prefix+"/", gtsvr.NewHandler(&route.RouteConfig{
 			Sign: true,
 		}, userSvr))
+		log.Info("user api registered at", userCfg.GetPrefix())
 	}
 
 	l, err := net.Listen("tcp", cfg.Address)
@@ -78,7 +80,7 @@ func main() {
 		log.Error(err)
 	}
 
-	log.Println("server start at", l.Addr(), "user-enable", userCfg.EnableUser)
+	log.Println("server start at", l.Addr())
 	if err := s.Serve(l); err != nil {
 		log.Error(err)
 	}

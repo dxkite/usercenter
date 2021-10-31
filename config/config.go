@@ -8,6 +8,14 @@ import (
 type Config struct {
 	EnableUser bool   `yaml:"enable_user"`
 	DataPath   string `yaml:"data_path"`
+	Prefix     string `yaml:"api_prefix"`
+}
+
+func (cfg *Config) GetPrefix() string {
+	if len(cfg.Prefix) == 0 {
+		return "/api/user"
+	}
+	return cfg.Prefix
 }
 
 func (cfg *Config) LoadFrom(in []byte) error {
