@@ -70,9 +70,7 @@ var UserInfoHandler = func(us store.UserStore) http.Handler {
 		}
 		d := &store.UserData{}
 		if err := json.Unmarshal([]byte(user.Data), d); err != nil {
-			log.Error(err)
-			JsonError(writer, "内部错误", -1)
-			return
+			log.Error("unmarshal user info", err)
 		}
 		resp := map[string]interface{}{}
 		resp["id"] = id
